@@ -1,0 +1,166 @@
+
+CREATE TABLE public.kaupunki (
+                kaupungin_nimi VARCHAR(50) NOT NULL,
+                CONSTRAINT kaupunki_pk PRIMARY KEY (kaupungin_nimi)
+);
+
+
+CREATE TABLE public.kaato_luvat (
+                Kausi VARCHAR(30) NOT NULL,
+                lupien_kokonais_maara INTEGER NOT NULL,
+                urostenmaara INTEGER NOT NULL,
+                naaraiden_maara INTEGER NOT NULL,
+                vasojen_maara INTEGER NOT NULL,
+                CONSTRAINT kaato_luvat_pk PRIMARY KEY (Kausi)
+);
+COMMENT ON COLUMN public.kaato_luvat.Kausi IS 'Merkitään kausi ja hirvieläin';
+
+
+CREATE SEQUENCE public.hirvi_tyyppi_tyyppi_id_seq_1;
+
+CREATE TABLE public.hirvi_tyyppi (
+                tyyppi_id INTEGER NOT NULL DEFAULT nextval('public.hirvi_tyyppi_tyyppi_id_seq_1'),
+                tyyppi_nimitys VARCHAR(20) NOT NULL,
+                CONSTRAINT hirvi_tyyppi_pk PRIMARY KEY (tyyppi_id)
+);
+COMMENT ON TABLE public.hirvi_tyyppi IS 'Valikko sille onko kyseessä uros, naaras vai vasa';
+
+
+ALTER SEQUENCE public.hirvi_tyyppi_tyyppi_id_seq_1 OWNED BY public.hirvi_tyyppi.tyyppi_id;
+
+CREATE SEQUENCE public.ruhon_kasittely_ruhonkasittely_id_seq_1;
+
+CREATE TABLE public.ruhon_kasittely (
+                ruhonkasittely_id INTEGER NOT NULL DEFAULT nextval('public.ruhon_kasittely_ruhonkasittely_id_seq_1'),
+                nimitys VARCHAR(50) NOT NULL,
+                CONSTRAINT ruhon_kasittely_pk PRIMARY KEY (ruhonkasittely_id)
+);
+
+
+ALTER SEQUENCE public.ruhon_kasittely_ruhonkasittely_id_seq_1 OWNED BY public.ruhon_kasittely.ruhonkasittely_id;
+
+CREATE TABLE public.seura (
+                seuran_nimi VARCHAR(50) NOT NULL,
+                sahkoposti VARCHAR(100) NOT NULL,
+                posti_osoite VARCHAR(100) NOT NULL,
+                posti_numero VARCHAR(8) NOT NULL,
+                seuran_liha_maara VARCHAR DEFAULT 0 NOT NULL,
+                CONSTRAINT seura_pk PRIMARY KEY (seuran_nimi)
+);
+COMMENT ON COLUMN public.seura.seuran_liha_maara IS 'Lihan määrä kilogrammoina';
+
+
+CREATE SEQUENCE public.seurue_seurue_id_seq_1;
+
+CREATE TABLE public.seurue (
+                seurue_id INTEGER NOT NULL DEFAULT nextval('public.seurue_seurue_id_seq_1'),
+                seuran_nimi VARCHAR(50) NOT NULL,
+                seurueen_liha_maara INTEGER DEFAULT 0 NOT NULL,
+                CONSTRAINT seurue_pk PRIMARY KEY (seurue_id)
+);
+COMMENT ON COLUMN public.seurue.seurueen_liha_maara IS 'Lihan määrä kilogrammoina';
+
+
+ALTER SEQUENCE public.seurue_seurue_id_seq_1 OWNED BY public.seurue.seurue_id;
+
+CREATE SEQUENCE public.ryhma_ryhma_id_seq_1;
+
+CREATE TABLE public.ryhma (
+                ryhma_id INTEGER NOT NULL DEFAULT nextval('public.ryhma_ryhma_id_seq_1'),
+                seurue_id INTEGER NOT NULL,
+                lihan_maara INTEGER DEFAULT 0 NOT NULL,
+                CONSTRAINT ryhma_pk PRIMARY KEY (ryhma_id)
+);
+COMMENT ON COLUMN public.ryhma.lihan_maara IS 'Lihan määrä kilogrammoina';
+
+
+ALTER SEQUENCE public.ryhma_ryhma_id_seq_1 OWNED BY public.ryhma.ryhma_id;
+
+CREATE TABLE public.jasen (
+                sahkoposti VARCHAR(100) NOT NULL,
+                ryhma_id INTEGER NOT NULL,
+                etunimi VARCHAR(100) NOT NULL,
+                sukunimi VARCHAR(100) NOT NULL,
+                puhelinnumero VARCHAR(20),
+                jasenen_liha_maara INTEGER DEFAULT 0 NOT NULL,
+                CONSTRAINT jasen_pk PRIMARY KEY (sahkoposti)
+);
+COMMENT ON COLUMN public.jasen.jasenen_liha_maara IS 'Lihan määrä kilogrammoina';
+
+
+CREATE SEQUENCE public.hirvi_hirvi_id_seq;
+
+CREATE TABLE public.hirvi (
+                hirvi_id INTEGER NOT NULL DEFAULT nextval('public.hirvi_hirvi_id_seq'),
+                vuosi VARCHAR(30) NOT NULL,
+                tyyppi_id INTEGER NOT NULL,
+                ruhon_paino INTEGER NOT NULL,
+                sahkoposti VARCHAR(100) NOT NULL,
+                kaadon_pvm DATE NOT NULL,
+                kaupungin_nimi VARCHAR(50) NOT NULL,
+                kaatamispaikka VARCHAR(100) NOT NULL,
+                ruhonkasittely_id INTEGER NOT NULL,
+                CONSTRAINT hirvi_pk PRIMARY KEY (hirvi_id)
+);
+COMMENT ON COLUMN public.hirvi.ruhon_paino IS 'Ruhon paino kilogrammoina';
+COMMENT ON COLUMN public.hirvi.sahkoposti IS 'Kaatajan sähköposti';
+COMMENT ON COLUMN public.hirvi.kaatamispaikka IS 'Tarkempiselvitys kaatopaikasta(koordinaatit?)';
+
+
+ALTER SEQUENCE public.hirvi_hirvi_id_seq OWNED BY public.hirvi.hirvi_id;
+
+ALTER TABLE public.hirvi ADD CONSTRAINT kaupunki_hirvi_fk
+FOREIGN KEY (kaupungin_nimi)
+REFERENCES public.kaupunki (kaupungin_nimi)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.hirvi ADD CONSTRAINT kaato_luvat_hirvi_fk
+FOREIGN KEY (vuosi)
+REFERENCES public.kaato_luvat (Kausi)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.hirvi ADD CONSTRAINT hirvi_tyyppi_hirvi_fk
+FOREIGN KEY (tyyppi_id)
+REFERENCES public.hirvi_tyyppi (tyyppi_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.hirvi ADD CONSTRAINT ruhon_kasittely_hirvi_fk
+FOREIGN KEY (ruhonkasittely_id)
+REFERENCES public.ruhon_kasittely (ruhonkasittely_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.seurue ADD CONSTRAINT seura_seurue_fk
+FOREIGN KEY (seuran_nimi)
+REFERENCES public.seura (seuran_nimi)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.ryhma ADD CONSTRAINT seurue_ryhma_fk
+FOREIGN KEY (seurue_id)
+REFERENCES public.seurue (seurue_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.jasen ADD CONSTRAINT ryhma_jasen_fk
+FOREIGN KEY (ryhma_id)
+REFERENCES public.ryhma (ryhma_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.hirvi ADD CONSTRAINT jasen_hirvi_fk
+FOREIGN KEY (sahkoposti)
+REFERENCES public.jasen (sahkoposti)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
